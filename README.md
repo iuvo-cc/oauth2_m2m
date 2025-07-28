@@ -17,8 +17,8 @@ A FastAPI-based OAuth2 Machine-to-Machine (M2M) authentication server with JWT t
 
 The system consists of two main components:
 
-1. **`main.py`**: FastAPI application with OAuth2 endpoints
-2. **`src/oauth2_m2m.py`**: Core OAuth2 M2M authentication class
+1. **`example/main.py`**: FastAPI application with OAuth2 endpoints
+2. **`oauth2_m2m.py`**: Core OAuth2 M2M authentication class
 
 ## API Endpoints
 

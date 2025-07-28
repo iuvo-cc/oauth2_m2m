@@ -4,7 +4,10 @@ from pydantic import BaseModel
 from datetime import datetime, timedelta
 from pymongo import MongoClient
 import secrets
-from src.oauth2_m2m import OAuth2M2M
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from oauth2_m2m import OAuth2M2M
 
 class TokenResponse(BaseModel):
     access_token: str

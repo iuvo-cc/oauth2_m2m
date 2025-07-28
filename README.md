@@ -17,8 +17,8 @@ A FastAPI-based OAuth2 Machine-to-Machine (M2M) authentication server with JWT t
 
 The system consists of two main components:
 
-1. **`example/main.py`**: FastAPI application with OAuth2 endpoints
-2. **`oauth2_m2m.py`**: Core OAuth2 M2M authentication class
+1. **`oauth2_m2m.py`**: Core OAuth2 M2M authentication class
+2. **`example/main.py`**: FastAPI application demonstrating OAuth2 endpoints usage
 
 ## API Endpoints
 
@@ -194,12 +194,18 @@ Event types logged:
 
 ## Installation
 
-1. Install dependencies:
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd auth
+```
+
+2. Install dependencies:
 ```bash
 pip install fastapi uvicorn pymongo python-jose[cryptography] python-multipart
 ```
 
-2. Set up MongoDB:
+3. Set up MongoDB:
 ```bash
 # Start MongoDB locally
 mongod --dbpath /path/to/your/db
@@ -230,9 +236,15 @@ db.clients.insertOne({
 
 ## Usage
 
-1. Start the server:
+1. Start the server from the project root:
 ```bash
-uvicorn main:app --reload
+uvicorn example.main:app --reload
+```
+
+Or alternatively, from the example directory:
+```bash
+cd example
+python -c "import sys; sys.path.append('..'); import main; import uvicorn; uvicorn.run(main.app, host='0.0.0.0', port=8000, reload=True)"
 ```
 
 2. Authenticate and get tokens:
@@ -260,12 +272,14 @@ curl -X POST "http://localhost:8000/refresh" \
 ### Project Structure
 ```
 auth/
-├── main.py              # FastAPI application
-├── src/
-│   └── oauth2_m2m.py   # OAuth2 M2M authentication class
-├── Pipfile             # Dependencies
-├── Pipfile.lock        # Locked dependencies
-└── README.md           # This file
+├── oauth2_m2m.py           # Core OAuth2 M2M authentication class
+├── example/
+│   └── main.py             # FastAPI application example
+├── Pipfile                 # Dependencies
+├── Pipfile.lock            # Locked dependencies
+├── .gitignore              # Git ignore file
+├── .pre-commit-config.yaml # Pre-commit hooks configuration
+└── README.md               # This file
 ```
 
 ### Environment Variables

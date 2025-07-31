@@ -90,26 +90,6 @@ class OAuth2M2M:
             raise HTTPException(status_code=401, detail="Could not validate token")
         return {"client_id": client_id, "scopes": scopes, "role": role}
 
-    def protected(self, required_scope=None):
-        def decorator(func):
-            from typing import Annotated
-            
-            # Define the dependency inline
-            def get_current_user(credentials: Annotated[str, Security(HTTPBearer())]) -> dict:
-                return self.get_current_client(credentials)
-            
-            # Create wrapper with proper type annotations
-            async def wrapper(current_client: Annotated[dict, Depends(get_current_user)]):
-                if required_scope and required_scope not in current_client["scopes"]:
-                    raise HTTPException(status_code=403, detail=f"Missing required scope: {required_scope}")
-                return await func(current_client)
-            
-            # Copy function metadata
-            wrapper.__name__ = func.__name__
-            wrapper.__module__ = func.__module__
-            wrapper.__qualname__ = func.__qualname__
-            wrapper.__doc__ = func.__doc__
-            wrapper.__annotations__ = {"current_client": dict, "return": func.__annotations__.get("return")}
-            
-            return wrapper
-        return decorator
+    def get_current_client_dep(self, credentials = Security(HTTPBearer())):
+        """Dependency function for getting current client from token"""
+        return self.get_current_client(credentials)

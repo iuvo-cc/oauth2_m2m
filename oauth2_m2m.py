@@ -66,9 +66,9 @@ class OAuth2M2M:
         else:
             self.rate_limits.insert_one({"_id": key, "count": 1, "timestamp": now})
 
-    def authenticate(self, form_data: OAuth2PasswordRequestForm, request: Request):
+    def authenticate(self, form_data, request: Request):
         client = self.clients.find_one({"client_id": form_data.username})
-        ip = self.get_ip(request)
+        ip = self.get_ip(request) if request else None
         if not client or client["client_secret"] != form_data.password:
             self.log_event("login_failure", form_data.username, ip, "Invalid credentials")
             raise HTTPException(status_code=401, detail="Invalid client credentials")

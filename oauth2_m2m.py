@@ -92,18 +92,9 @@ class OAuth2M2M:
 
     def protected(self, required_scope=None):
         def decorator(func):
-            async def wrapper(*args, **kwargs):
-                # Get credentials from the first argument if it's HTTPAuthorizationCredentials
-                # or from dependency injection
-                credentials = None
-                for arg in args:
-                    if hasattr(arg, 'credentials'):
-                        credentials = arg
-                        break
-                
-                if not credentials:
-                    raise HTTPException(status_code=401, detail="No authorization credentials provided")
-                
+            from functools import wraps
+            @wraps(func)
+            async def wrapper(credentials=Security(HTTPBearer()), *args, **kwargs):
                 client = self.get_current_client(credentials)
                 if required_scope and required_scope not in client["scopes"]:
                     raise HTTPException(status_code=403, detail=f"Missing required scope: {required_scope}")

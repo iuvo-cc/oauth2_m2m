@@ -1,0 +1,328 @@
+{
+  "info": {
+    "name": "OAuth2 M2M FastAPI Collection",
+    "description": "Postman collection for OAuth2 Machine-to-Machine FastAPI application",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "client_id",
+      "value": "your_client_id",
+      "type": "string"
+    },
+    {
+      "key": "client_secret",
+      "value": "your_client_secret",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "noauth"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Get Access Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', responseJson.access_token);",
+                  "    pm.collectionVariables.set('refresh_token', responseJson.refresh_token);",
+                  "    pm.test('Token obtained successfully', function () {",
+                  "        pm.expect(responseJson.access_token).to.not.be.empty;",
+                  "        pm.expect(responseJson.refresh_token).to.not.be.empty;",
+                  "        pm.expect(responseJson.token_type).to.eql('bearer');",
+                  "    });",
+                  "} else {",
+                  "    pm.test('Authentication failed', function () {",
+                  "        pm.expect.fail('Failed to get access token');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "{{client_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{client_secret}}",
+                  "type": "text"
+                },
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/token",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "token"
+              ]
+            },
+            "description": "Authenticate and get access token and refresh token using client credentials"
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', responseJson.access_token);",
+                  "    pm.collectionVariables.set('refresh_token', responseJson.refresh_token);",
+                  "    pm.test('Token refreshed successfully', function () {",
+                  "        pm.expect(responseJson.access_token).to.not.be.empty;",
+                  "        pm.expect(responseJson.refresh_token).to.not.be.empty;",
+                  "        pm.expect(responseJson.token_type).to.eql('bearer');",
+                  "    });",
+                  "} else {",
+                  "    pm.test('Token refresh failed', function () {",
+                  "        pm.expect.fail('Failed to refresh token');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/refresh",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "refresh"
+              ]
+            },
+            "description": "Refresh access token using refresh token"
+          },
+          "response": []
+        },
+        {
+          "name": "Revoke Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Token revoked successfully', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.message).to.include('revoked successfully');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"access_token\": \"{{access_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/revoke",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "revoke"
+              ]
+            },
+            "description": "Revoke an access token"
+          },
+          "response": []
+        }
+      ],
+      "description": "Authentication related endpoints for getting, refreshing, and revoking tokens"
+    },
+    {
+      "name": "Protected Routes",
+      "item": [
+        {
+          "name": "Protected Route - Read Scope",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Protected route accessible', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.message).to.include('Hello');",
+                  "    pm.expect(responseJson.message).to.include('protected route');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/protected",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "protected"
+              ]
+            },
+            "description": "Access protected route that requires 'read' scope"
+          },
+          "response": []
+        },
+        {
+          "name": "Admin Only Route",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Admin route accessible', function () {",
+                  "        const responseJson = pm.response.json();",
+                  "        pm.expect(responseJson.message).to.include('Welcome Admin');",
+                  "    });",
+                  "} else if (pm.response.code === 403) {",
+                  "    pm.test('Admin role required', function () {",
+                  "        const responseJson = pm.response.json();",
+                  "        pm.expect(responseJson.detail).to.include('Admin role required');",
+                  "    });",
+                  "} else {",
+                  "    pm.test('Unexpected response', function () {",
+                  "        pm.expect.fail('Unexpected response code: ' + pm.response.code);",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin-only",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin-only"
+              ]
+            },
+            "description": "Access admin-only route that requires admin role"
+          },
+          "response": []
+        }
+      ],
+      "description": "Protected endpoints that require valid access tokens and appropriate scopes/roles"
+    }
+  ]
+}

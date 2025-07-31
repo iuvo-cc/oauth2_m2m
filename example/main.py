@@ -3,11 +3,12 @@ from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 from pymongo import MongoClient
+import dynaconf
 import secrets
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from oauth2_m2m import OAuth2M2M
+
+from src.oauth2_m2m.oauth2_m2m import OAuth2M2M
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -21,8 +22,10 @@ class RevokeTokenRequest(BaseModel):
     access_token: str
 
 # Instância global do app e da classe
+config = dynaconf.LazySettings(merge_enabled=True, settings_files=["conf/config.toml"] )
 app = FastAPI()
-m2m = OAuth2M2M(MongoClient("mongodb://localhost:27017").oauth2_m2m)
+client = MongoClient(os.getenv("MONGO_URL"))
+m2m = OAuth2M2M(MongoClient(os.getenv("MONGO_URL")).oauth2_m2m)
 
 @app.post("/token", response_model=TokenResponse)
 def get_token(form_data: OAuth2PasswordRequestForm = Depends(), request: Request = None):
@@ -61,13 +64,15 @@ def revoke_token(request_data: RevokeTokenRequest):
     return {"message": "Token revoked successfully"}
 
 @app.get("/protected")
-@m2m.protected("read")
-async def protected_route(client):
-    return {"message": f"Hello {client['client_id']}, you have accessed a protected route!"}
+async def protected_route(current_client: dict = Depends(m2m.get_current_client_dep)):
+    if "read" not in current_client["scopes"]:
+        raise HTTPException(status_code=403, detail="Missing required scope: read")
+    return {"message": f"Hello {current_client['client_id']}, you have accessed a protected route!"}
 
 @app.get("/admin-only")
-@m2m.protected("admin")
-async def admin_route(client):
-    if client["role"] != "admin":
+async def admin_route(current_client: dict = Depends(m2m.get_current_client_dep)):
+    if "admin" not in current_client["scopes"]:
+        raise HTTPException(status_code=403, detail="Missing required scope: admin")
+    if current_client["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin role required")
-    return {"message": f"Welcome Admin {client['client_id']}!"}
+    return {"message": f"Welcome Admin {current_client['client_id']}!"}

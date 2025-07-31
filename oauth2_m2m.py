@@ -75,7 +75,7 @@ class OAuth2M2M:
         self.log_event("login_success", form_data.username, ip)
         return client
 
-    def get_current_client(self, credentials=Security(HTTPBearer())):
+    def get_current_client(self, credentials):
         token = credentials.credentials
         try:
             if self.revoked.find_one({"token": token}):
@@ -92,7 +92,19 @@ class OAuth2M2M:
 
     def protected(self, required_scope=None):
         def decorator(func):
-            async def wrapper(client=Depends(self.get_current_client), *args, **kwargs):
+            async def wrapper(*args, **kwargs):
+                # Get credentials from the first argument if it's HTTPAuthorizationCredentials
+                # or from dependency injection
+                credentials = None
+                for arg in args:
+                    if hasattr(arg, 'credentials'):
+                        credentials = arg
+                        break
+                
+                if not credentials:
+                    raise HTTPException(status_code=401, detail="No authorization credentials provided")
+                
+                client = self.get_current_client(credentials)
                 if required_scope and required_scope not in client["scopes"]:
                     raise HTTPException(status_code=403, detail=f"Missing required scope: {required_scope}")
                 return await func(client=client, *args, **kwargs)

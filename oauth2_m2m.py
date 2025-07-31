@@ -90,14 +90,26 @@ class OAuth2M2M:
             raise HTTPException(status_code=401, detail="Could not validate token")
         return {"client_id": client_id, "scopes": scopes, "role": role}
 
+    def get_current_client_dependency(self):
+        def get_client(credentials = Security(HTTPBearer())):
+            return self.get_current_client(credentials)
+        return get_client
+
     def protected(self, required_scope=None):
         def decorator(func):
-            from functools import wraps
-            @wraps(func)
-            async def wrapper(credentials=Security(HTTPBearer()), *args, **kwargs):
-                client = self.get_current_client(credentials)
+            # Create the dependency function
+            get_client = self.get_current_client_dependency()
+            
+            async def wrapper(client = Depends(get_client)):
                 if required_scope and required_scope not in client["scopes"]:
                     raise HTTPException(status_code=403, detail=f"Missing required scope: {required_scope}")
-                return await func(client=client, *args, **kwargs)
+                return await func(client)
+            
+            # Preserve function metadata for FastAPI
+            wrapper.__name__ = func.__name__
+            wrapper.__qualname__ = func.__qualname__
+            wrapper.__annotations__ = getattr(func, '__annotations__', {})
+            wrapper.__doc__ = func.__doc__
+            
             return wrapper
         return decorator

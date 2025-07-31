@@ -75,30 +75,21 @@ class OAuth2M2M:
         self.log_event("login_success", form_data.username, ip)
         return client
 
-    def get_current_client(self, credentials=Security(HTTPBearer()), request: Request = None):
+    def get_current_client(self, credentials):
         token = credentials.credentials
-        ip = self.get_ip(request) if request else None
         try:
             if self.revoked.find_one({"token": token}):
-                self.log_event("token_revoked", ip=ip, reason="Token found in revocation list")
+                self.log_event("token_revoked", reason="Token found in revocation list")
                 raise HTTPException(status_code=401, detail="Token has been revoked")
             payload = jwt.decode(token, self.config["SECRET_KEY"], algorithms=[self.config["ALGORITHM"]])
             client_id = payload.get("sub")
             scopes = payload.get("scopes", [])
             role = payload.get("role", "")
-            if request:
-                self.rate_limit(client_id, ip)
         except JWTError:
-            self.log_event("token_invalid", ip=ip, reason="JWT decoding error")
+            self.log_event("token_invalid", reason="JWT decoding error")
             raise HTTPException(status_code=401, detail="Could not validate token")
         return {"client_id": client_id, "scopes": scopes, "role": role}
 
-    def protected(self, required_scope=None):
-        def decorator(func):
-            @wraps(func)
-            async def wrapper(*args, client=Depends(self.get_current_client), **kwargs):
-                if required_scope and required_scope not in client["scopes"]:
-                    raise HTTPException(status_code=403, detail=f"Missing required scope: {required_scope}")
-                return await func(*args, client=client, **kwargs)
-            return wrapper
-        return decorator
+    def get_current_client_dep(self, credentials = Security(HTTPBearer())):
+        """Dependency function for getting current client from token"""
+        return self.get_current_client(credentials)

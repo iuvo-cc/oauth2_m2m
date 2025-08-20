@@ -1,4 +1,4 @@
-# OAuth2 Machine-to-Machine Authentication Server
+# OAuth2 Machine-to-Machine Authentication Service
 
 A FastAPI-based OAuth2 Machine-to-Machine (M2M) authentication server with JWT tokens, refresh token rotation, rate limiting, and comprehensive audit logging.
 
